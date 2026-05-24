@@ -1,119 +1,50 @@
 import json
 
-with open('../data/history.json', 'r', encoding='utf-8') as f:
-    history = json.load(f)
+data = json.load(open("../data/history.json"))
 
-if len(history) < 2:
-
-    result = {
-        "summary": "Data belum cukup untuk analisis tren aktivitas."
-    }
+if len(data) < 2:
+    result = {"summary": "Data belum cukup."}
 
 else:
 
-    latest = history[0]
-    previous = history[1]
+    latest = data[0]
+    prev = data[1]
 
-    latest_g = latest["gempa"]
-    prev_g = previous["gempa"]
+    g1 = latest["gempa"]
+    g0 = prev["gempa"]
 
-    analysis = []
+    notes = []
 
-    # =====================================
-    # Vulkanik Dangkal
-    # =====================================
+    def check(name, label):
+        if g1[name] > g0[name]:
+            notes.append(f"Peningkatan {label} dibanding hari sebelumnya.")
 
-    if latest_g["vulkanik_dangkal"] > prev_g["vulkanik_dangkal"]:
+    check("vulkanik_dalam", "gempa vulkanik dalam")
+    check("vulkanik_dangkal", "gempa vulkanik dangkal")
+    check("low_frequency", "low frequency")
+    check("tremor_harmonik", "tremor harmonik")
+    check("tremor_menerus", "tremor terus menerus")
 
-        analysis.append(
-            "Terjadi peningkatan gempa vulkanik dangkal dibanding hari sebelumnya. "
-            "Pola ini dapat mengindikasikan adanya pergerakan magma yang mulai "
-            "mendekati permukaan."
-        )
+    if g1["tremor_harmonik"] > 0 or g1["tremor_menerus"] > 0:
+        notes.append("Terjadi indikasi aktivitas fluida magmatik.")
 
-    # =====================================
-    # Vulkanik Dalam
-    # =====================================
+    # WARNING LOGIC (tanpa angka)
+    if g1["vulkanik_dangkal"] > g0["vulkanik_dangkal"] and g1["low_frequency"] > 0:
+        warning = "PERHATIAN: pola menunjukkan peningkatan aktivitas magma dangkal."
+    else:
+        warning = "Tidak ada indikasi perubahan signifikan."
 
-    if latest_g["vulkanik_dalam"] > prev_g["vulkanik_dalam"]:
-
-        analysis.append(
-            "Gempa vulkanik dalam mengalami peningkatan. "
-            "Hal ini dapat berkaitan dengan suplai magma dari kedalaman."
-        )
-
-    # =====================================
-    # Tremor Harmonik
-    # =====================================
-
-    if latest_g["tremor_harmonik"] > 0:
-
-        analysis.append(
-            "Kemunculan tremor harmonik menunjukkan adanya aktivitas fluida "
-            "atau gas vulkanik yang bergerak secara kontinu."
-        )
-
-    # =====================================
-    # Tremor Menerus
-    # =====================================
-
-    if latest_g["tremor_menerus"] > 0:
-
-        analysis.append(
-            "Terdeteksi tremor terus menerus yang dapat mengindikasikan "
-            "aktivitas internal gunung api masih berlangsung."
-        )
-
-    # =====================================
-    # Low Frequency
-    # =====================================
-
-    if latest_g["low_frequency"] > prev_g["low_frequency"]:
-
-        analysis.append(
-            "Gempa low frequency mengalami peningkatan dibanding periode sebelumnya. "
-            "Jenis gempa ini sering dikaitkan dengan pergerakan fluida vulkanik."
-        )
-
-    # =====================================
-    # Tornillo
-    # =====================================
-
-    if latest_g["tornillo"] > 0:
-
-        analysis.append(
-            "Kemunculan gempa tornillo dapat berkaitan dengan tekanan gas "
-            "atau resonansi fluida di dalam sistem vulkanik."
-        )
-
-    # =====================================
-    # Fallback
-    # =====================================
-
-    if len(analysis) == 0:
-
-        analysis.append(
-            "Belum terlihat perubahan signifikan pada pola kegempaan vulkanik "
-            "dibanding periode sebelumnya."
-        )
+    if not notes:
+        notes.append("Tidak ada perubahan signifikan pada pola kegempaan.")
 
     result = {
         "date": latest["date"],
+        "time": latest["time"],
         "status": latest["status"],
-        "summary": "\n\n".join(analysis)
+        "warning": warning,
+        "summary": "\n".join(notes)
     }
 
-# =====================================
-# SAVE
-# =====================================
-
-with open('../data/analysis.json', 'w', encoding='utf-8') as f:
-
-    json.dump(
-        result,
-        f,
-        indent=2,
-        ensure_ascii=False
-    )
+json.dump(result, open("../data/analysis.json", "w"), indent=2)
 
 print("ANALYSIS DONE")

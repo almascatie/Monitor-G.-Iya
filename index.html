@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Gunung Iya</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>🌋 MONITOR GUNUNG IYA</h1>
+  <p>Analisis aktivitas vulkanik berbasis AI</p>
+</header>
+
+<main>
+
+  <section class="card">
+    <h2>Status Gunung</h2>
+    <div id="status">Loading...</div>
+  </section>
+
+  <section class="card">
+    <h2>Analisis AI</h2>
+    <div id="analysis">Loading...</div>
+  </section>
+
+  <section class="card">
+    <h2>Risk Score</h2>
+    <div id="risk-score">0</div>
+  </section>
+
+  <section class="card">
+    <h2>Grafik Aktivitas</h2>
+    <canvas id="activityChart"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Laporan Terbaru</h2>
+    <ul id="history-list"></ul>
+  </section>
+
+  <section class="card disclaimer">
+    <h2>Disclaimer</h2>
+    <p>
+      Analisis AI hanya sebagai informasi tambahan dan bukan pengganti
+      informasi resmi dari MAGMA Indonesia / PVMBG.
+    </p>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+
+</body>
+</html>

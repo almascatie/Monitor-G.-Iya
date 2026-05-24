@@ -1,0 +1,17 @@
+[
+  {
+    "date": "2026-05-24",
+    "status": "LEVEL II",
+    "gempa": 21
+  },
+  {
+    "date": "2026-05-23",
+    "status": "LEVEL II",
+    "gempa": 18
+  },
+  {
+    "date": "2026-05-22",
+    "status": "LEVEL II",
+    "gempa": 17
+  }
+]

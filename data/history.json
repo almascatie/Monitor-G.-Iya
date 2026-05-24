@@ -1,16 +1,1 @@
-{
-  "date": "2026-05-24",
-  "time": "08:00",
-  "status": "LEVEL II",
-  "gempa": {
-    "vulkanik_dalam": 3,
-    "vulkanik_dangkal": 7,
-    "low_frequency": 2,
-    "tremor_harmonik": 1,
-    "tremor_menerus": 0,
-    "tornillo": 0,
-    "hembusan": 5,
-    "tektonik_lokal": 2,
-    "tektonik_jauh": 4
-  }
-}
+

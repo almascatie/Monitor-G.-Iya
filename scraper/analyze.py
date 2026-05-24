@@ -15,8 +15,7 @@ with open('../data/history.json', 'r', encoding='utf-8') as f:
 with open('../prompts/gemini_prompt.txt', 'r', encoding='utf-8') as f:
     prompt_base = f.read()
 
-model = genai.GenerativeModel('gemini-1.5-flash')
-
+model = genai.GenerativeModel('gemini-2.0-flash')
 prompt = f"""
 {prompt_base}
 

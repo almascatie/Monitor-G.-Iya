@@ -72,56 +72,119 @@
 <script>
 async function load() {
 
-  const history = await fetch("data/history.json").then(r => r.json());
-  const analysis = await fetch("data/analysis.json").then(r => r.json());
+  try {
 
-  const latest = history[0];
-  const prev = history[1];
+    const history =
+      await fetch("data/history.json")
+      .then(r => r.json());
 
-  // META
-  document.getElementById("meta").innerHTML =
-    `Tanggal: ${latest.date} | Jam: ${latest.time} | Status: ${latest.status}`;
+    const analysis =
+      await fetch("data/analysis.json")
+      .then(r => r.json());
 
-  // WARNING
-  document.getElementById("warning").innerText = analysis.warning;
+    // VALIDASI
+    if (!history || history.length === 0) {
 
-  // SUMMARY
-  document.getElementById("summary").innerText = analysis.summary;
+      document.body.innerHTML =
+        "<h2>Data belum tersedia.</h2>";
 
-  // GEMPA DETAIL
-  let g = latest.gempa;
-
-  document.getElementById("gempa").innerHTML = `
-    <tr><th>Jenis</th><th>Jumlah</th></tr>
-    <tr><td>Vulkanik Dalam</td><td>${g.vulkanik_dalam}</td></tr>
-    <tr><td>Vulkanik Dangkal</td><td>${g.vulkanik_dangkal}</td></tr>
-    <tr><td>Low Frequency</td><td>${g.low_frequency}</td></tr>
-    <tr><td>Tremor Harmonik</td><td>${g.tremor_harmonik}</td></tr>
-    <tr><td>Tremor Menerus</td><td>${g.tremor_menerus}</td></tr>
-    <tr><td>Tornillo</td><td>${g.tornillo}</td></tr>
-    <tr><td>Hembusan</td><td>${g.hembusan}</td></tr>
-    <tr><td>Tektonik Lokal</td><td>${g.tektonik_lokal}</td></tr>
-    <tr><td>Tektonik Jauh</td><td>${g.tektonik_jauh}</td></tr>
-  `;
-
-  // COMPARISON
-  if (prev) {
-
-    let c = latest.gempa;
-    let p = prev.gempa;
-
-    let html = "";
-
-    for (let k in c) {
-
-      let diff = c[k] - p[k];
-
-      let cls = diff > 0 ? "danger" : "safe";
-
-      html += `<div>${k}: <span class="${cls}">${diff >= 0 ? "+" : ""}${diff}</span></div>`;
+      return;
     }
 
-    document.getElementById("compare").innerHTML = html;
+    const latest = history[0];
+    const prev = history[1];
+
+    // META
+    document.getElementById("meta").innerHTML =
+      `
+      Tanggal: ${latest.date || "-"}
+      |
+      Jam: ${latest.time || "-"}
+      |
+      Status: ${latest.status || "-"}
+      `;
+
+    // WARNING
+    document.getElementById("warning").innerText =
+      analysis.warning ||
+      "Belum ada warning aktivitas.";
+
+    // SUMMARY
+    document.getElementById("summary").innerText =
+      analysis.summary ||
+      "Belum ada analisis.";
+
+    // GEMPA
+    let g = latest.gempa || {};
+
+    document.getElementById("gempa").innerHTML = `
+      <tr>
+        <th>Jenis</th>
+        <th>Jumlah</th>
+      </tr>
+
+      <tr><td>Vulkanik Dalam</td><td>${g.vulkanik_dalam ?? 0}</td></tr>
+
+      <tr><td>Vulkanik Dangkal</td><td>${g.vulkanik_dangkal ?? 0}</td></tr>
+
+      <tr><td>Low Frequency</td><td>${g.low_frequency ?? 0}</td></tr>
+
+      <tr><td>Tremor Harmonik</td><td>${g.tremor_harmonik ?? 0}</td></tr>
+
+      <tr><td>Tremor Menerus</td><td>${g.tremor_menerus ?? 0}</td></tr>
+
+      <tr><td>Tornillo</td><td>${g.tornillo ?? 0}</td></tr>
+
+      <tr><td>Hembusan</td><td>${g.hembusan ?? 0}</td></tr>
+
+      <tr><td>Tektonik Lokal</td><td>${g.tektonik_lokal ?? 0}</td></tr>
+
+      <tr><td>Tektonik Jauh</td><td>${g.tektonik_jauh ?? 0}</td></tr>
+    `;
+
+    // COMPARISON
+    if (prev && prev.gempa) {
+
+      let c = latest.gempa;
+      let p = prev.gempa;
+
+      let html = "";
+
+      for (let k in c) {
+
+        let diff = (c[k] || 0) - (p[k] || 0);
+
+        let cls = diff > 0
+          ? "danger"
+          : "safe";
+
+        html += `
+          <div>
+            ${k.replaceAll("_", " ")}:
+            <span class="${cls}">
+              ${diff >= 0 ? "+" : ""}
+              ${diff}
+            </span>
+          </div>
+        `;
+      }
+
+      document.getElementById("compare").innerHTML = html;
+
+    } else {
+
+      document.getElementById("compare").innerHTML =
+        "Belum ada data pembanding.";
+    }
+
+  } catch (err) {
+
+    console.error(err);
+
+    document.body.innerHTML = `
+      <h2>Gagal memuat data monitoring.</h2>
+      <p>Cek file JSON atau GitHub Actions.</p>
+    `;
   }
 }
 

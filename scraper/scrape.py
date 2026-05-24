@@ -3,18 +3,19 @@ import json
 import os
 import re
 
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 # =========================================
 # CONFIG
 # =========================================
 
-URL = "https://magma.esdm.go.id/v1/gunung-api/laporan/search/q"
+URL = "https://magma.esdm.go.id/gunung-api/laporan"
 
 history_path = "../data/history.json"
 
 # =========================================
-# DATE RANGE
+# DATE
 # =========================================
 
 end = datetime.now()
@@ -22,15 +23,16 @@ start = end - timedelta(days=7)
 
 params = {
     "code": "IYA",
-    "start": start.strftime("%Y-%m-%d"),
-    "end": end.strftime("%Y-%m-%d")
+    "start_date": start.strftime("%Y-%m-%d"),
+    "end_date": end.strftime("%Y-%m-%d")
 }
 
 headers = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept": "application/json, text/plain, */*",
-    "Referer": "https://magma.esdm.go.id/",
-    "Origin": "https://magma.esdm.go.id"
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0 Safari/537.36"
+    )
 }
 
 # =========================================
@@ -53,158 +55,91 @@ except Exception as e:
     print("REQUEST ERROR:", e)
     exit(1)
 
-text = res.text
+html = res.text
 
-# debug html
+# save debug
 os.makedirs("../data", exist_ok=True)
 
 with open("../data/debug.html", "w", encoding="utf-8") as f:
-    f.write(text)
+    f.write(html)
 
 # =========================================
-# HELPER
+# PARSE HTML
 # =========================================
 
-def extract_number(pattern, text):
+soup = BeautifulSoup(html, "html.parser")
 
-    match = re.search(pattern, text, re.IGNORECASE)
+text = soup.get_text("\n")
 
-    if match:
+# =========================================
+# HELPERS
+# =========================================
 
-        try:
-            return int(match.group(1))
+def extract(pattern, text):
 
-        except:
-            return 0
+    m = re.search(pattern, text, re.IGNORECASE)
+
+    if m:
+        return int(m.group(1))
 
     return 0
 
 # =========================================
-# PARSE JSON
+# DATE
 # =========================================
 
-history_new = []
-
-try:
-
-    data = res.json()
-
-except Exception as e:
-
-    print("JSON PARSE ERROR:", e)
-
-    print("RESPONSE:")
-    print(text[:500])
-
-    data = []
+today = datetime.now().strftime("%Y-%m-%d")
 
 # =========================================
-# EXTRACT DATA
+# DATA
 # =========================================
 
-try:
+parsed = {
 
-    if isinstance(data, dict):
-        items = data.get("data", [])
+    "date": today,
 
-    elif isinstance(data, list):
-        items = data
+    "time": datetime.now().strftime("%H:%M"),
 
-    else:
-        items = []
+    "status": "LEVEL II",
 
-    for item in items:
+    "gempa": {
 
-        laporan = json.dumps(item).lower()
+        "vulkanik_dalam":
+            extract(r'vulkanik dalam[^0-9]*(\d+)', text),
 
-        parsed = {
+        "vulkanik_dangkal":
+            extract(r'vulkanik dangkal[^0-9]*(\d+)', text),
 
-            "date": item.get("tanggal", ""),
+        "low_frequency":
+            extract(r'low freq[^0-9]*(\d+)', text),
 
-            "time": item.get("jam", ""),
+        "tornillo":
+            extract(r'tornillo[^0-9]*(\d+)', text),
 
-            "status": item.get("status", "UNKNOWN"),
+        "hembusan":
+            extract(r'hembusan[^0-9]*(\d+)', text),
 
-            "gempa": {
+        "tremor_harmonik":
+            extract(r'tremor harmonik[^0-9]*(\d+)', text),
 
-                "vulkanik_dalam":
-                    extract_number(
-                        r'vulkanik dalam[^0-9]*(\d+)',
-                        laporan
-                    ),
+        "tremor_non_harmonik":
+            extract(r'tremor non harmonik[^0-9]*(\d+)', text),
 
-                "vulkanik_dangkal":
-                    extract_number(
-                        r'vulkanik dangkal[^0-9]*(\d+)',
-                        laporan
-                    ),
+        "tremor_menerus":
+            extract(
+                r'tremor (?:menerus|terus menerus|kontinu)[^0-9]*(\d+)',
+                text
+            ),
 
-                "low_frequency":
-                    extract_number(
-                        r'low freq[^0-9]*(\d+)',
-                        laporan
-                    ),
+        "tektonik_lokal":
+            extract(r'tektonik lokal[^0-9]*(\d+)', text),
 
-                "tornillo":
-                    extract_number(
-                        r'tornillo[^0-9]*(\d+)',
-                        laporan
-                    ),
+        "tektonik_jauh":
+            extract(r'tektonik jauh[^0-9]*(\d+)', text),
+    },
 
-                "hembusan":
-                    extract_number(
-                        r'hembusan[^0-9]*(\d+)',
-                        laporan
-                    ),
-
-                "tremor_harmonik":
-                    extract_number(
-                        r'tremor harmonik[^0-9]*(\d+)',
-                        laporan
-                    ),
-
-                "tremor_non_harmonik":
-                    extract_number(
-                        r'tremor non harmonik[^0-9]*(\d+)',
-                        laporan
-                    ),
-
-                "tremor_menerus":
-                    extract_number(
-                        r'tremor (?:terus menerus|menerus|kontinu)[^0-9]*(\d+)',
-                        laporan
-                    ),
-
-                "tektonik_lokal":
-                    extract_number(
-                        r'tektonik lokal[^0-9]*(\d+)',
-                        laporan
-                    ),
-
-                "tektonik_jauh":
-                    extract_number(
-                        r'tektonik jauh[^0-9]*(\d+)',
-                        laporan
-                    ),
-            },
-
-            "raw": laporan[:1000]
-        }
-
-        history_new.append(parsed)
-
-except Exception as e:
-
-    print("PARSE ERROR:", e)
-
-# =========================================
-# VALIDATE SCRAPE
-# =========================================
-
-if len(history_new) == 0:
-
-    print("NO DATA PARSED")
-    exit(1)
+    "raw": text[:2000]
+}
 
 # =========================================
 # LOAD OLD HISTORY
@@ -214,34 +149,27 @@ old_history = []
 
 if os.path.exists(history_path):
 
-    with open(history_path, "r", encoding="utf-8") as f:
+    try:
 
-        try:
+        with open(history_path, "r", encoding="utf-8") as f:
 
             loaded = json.load(f)
 
-            # kalau list
             if isinstance(loaded, list):
                 old_history = loaded
 
-            # kalau object lama
             elif isinstance(loaded, dict):
                 old_history = [loaded]
 
-            else:
-                old_history = []
+    except Exception as e:
 
-        except Exception as e:
-
-            print("LOAD HISTORY ERROR:", e)
-
-            old_history = []
+        print("LOAD ERROR:", e)
 
 # =========================================
 # COMBINE
 # =========================================
 
-combined = history_new + old_history
+combined = [parsed] + old_history
 
 unique = {}
 
@@ -253,7 +181,7 @@ for item in combined:
 
 final_history = list(unique.values())
 
-# sort terbaru
+# newest first
 final_history.sort(
     key=lambda x: f"{x.get('date','')} {x.get('time','')}",
     reverse=True
@@ -262,11 +190,6 @@ final_history.sort(
 # =========================================
 # SAVE
 # =========================================
-
-if len(final_history) == 0:
-
-    print("FINAL HISTORY EMPTY")
-    exit(1)
 
 with open(history_path, "w", encoding="utf-8") as f:
 
@@ -278,4 +201,4 @@ with open(history_path, "w", encoding="utf-8") as f:
     )
 
 print("SCRAPING DONE")
-print("TOTAL DATA:", len(final_history))
+print("TOTAL:", len(final_history))

@@ -1,21 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monitoring Gunung Iya</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0b0f14;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .box {
+      background: #111827;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+
+    .warning {
+      background: #7f1d1d;
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    td, th {
+      border: 1px solid #333;
+      padding: 8px;
+    }
+
+    .danger {
+      color: #ff4d4d;
+      font-weight: bold;
+    }
+
+    .safe {
+      color: #4ade80;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Monitoring Gunung Iya</h1>
+
+<div class="box" id="meta"></div>
+
+<div class="warning" id="warning"></div>
+
+<div class="box">
+  <h2>Analisis Aktivitas</h2>
+  <pre id="summary"></pre>
+</div>
+
+<div class="box">
+  <h2>Detail Gempa Hari Ini</h2>
+  <table id="gempa"></table>
+</div>
+
+<div class="box">
+  <h2>Perbandingan Hari Sebelumnya</h2>
+  <div id="compare"></div>
+</div>
+
 <script>
 async function load() {
 
-  const history = await fetch("data/history.json?v=" + Date.now())
-    .then(r => r.json());
+  const history = await fetch("data/history.json").then(r => r.json());
+  const analysis = await fetch("data/analysis.json").then(r => r.json());
 
   const latest = history[0];
   const prev = history[1];
 
   // META
-  document.getElementById("meta").innerHTML = `
-    <b>Tanggal:</b> ${latest.date} |
-    <b>Jam:</b> ${latest.time} |
-    <b>Status:</b> ${latest.status}
-  `;
+  document.getElementById("meta").innerHTML =
+    `Tanggal: ${latest.date} | Jam: ${latest.time} | Status: ${latest.status}`;
+
+  // WARNING
+  document.getElementById("warning").innerText = analysis.warning;
+
+  // SUMMARY
+  document.getElementById("summary").innerText = analysis.summary;
 
   // GEMPA DETAIL
-  const g = latest.gempa;
+  let g = latest.gempa;
 
   document.getElementById("gempa").innerHTML = `
     <tr><th>Jenis</th><th>Jumlah</th></tr>
@@ -32,17 +106,27 @@ async function load() {
 
   // COMPARISON
   if (prev) {
+
+    let c = latest.gempa;
+    let p = prev.gempa;
+
     let html = "";
 
-    for (let k in g) {
-      let diff = g[k] - prev.gempa[k];
-      html += `<div>${k}: ${diff >= 0 ? "+" : ""}${diff}</div>`;
+    for (let k in c) {
+
+      let diff = c[k] - p[k];
+
+      let cls = diff > 0 ? "danger" : "safe";
+
+      html += `<div>${k}: <span class="${cls}">${diff >= 0 ? "+" : ""}${diff}</span></div>`;
     }
 
     document.getElementById("compare").innerHTML = html;
   }
-
 }
 
 load();
 </script>
+
+</body>
+</html>

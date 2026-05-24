@@ -5,7 +5,10 @@ from datetime import datetime, timedelta
 
 URL = "https://magma.esdm.go.id/v1/gunung-api/laporan/search/q"
 
-history_path = "../data/history.json"
+headers = {
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "application/json, text/html"
+}
 
 now = datetime.now()
 start = now - timedelta(days=7)
@@ -16,57 +19,51 @@ params = {
     "end": now.strftime("%Y-%m-%d")
 }
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
-
 res = requests.get(URL, params=params, headers=headers)
 
-data = res.json().get("data", [])
+print("STATUS:", res.status_code)
+print("CONTENT-TYPE:", res.headers.get("content-type"))
 
-new_data = []
+try:
+    data = res.json()
+except:
+    print("JSON FAIL → fallback HTML")
+    data = []
 
-for item in data:
+# debug simpan response mentah
+os.makedirs("data", exist_ok=True)
+with open("data/debug_response.txt", "w", encoding="utf-8") as f:
+    f.write(res.text)
 
-    raw = str(item).lower()
+history = []
 
-    new_data.append({
-        "date": item.get("tanggal", now.strftime("%Y-%m-%d")),
-        "time": item.get("jam", "00:00"),
+if isinstance(data, dict):
+    items = data.get("data", [])
+else:
+    items = data
+
+for item in items:
+
+    history.append({
+        "date": item.get("tanggal", ""),
+        "time": item.get("jam", ""),
         "status": item.get("status", "UNKNOWN"),
-
         "gempa": {
-            "vulkanik_dalam": raw.count("vulkanik dalam"),
-            "vulkanik_dangkal": raw.count("vulkanik dangkal"),
-            "low_frequency": raw.count("low freq"),
-            "tremor_harmonik": raw.count("tremor harmonik"),
-            "tremor_menerus": raw.count("tremor terus"),
-            "tornillo": raw.count("tornillo"),
-            "hembusan": raw.count("hembusan"),
-            "tektonik_lokal": raw.count("tektonik lokal"),
-            "tektonik_jauh": raw.count("tektonik jauh"),
+            "vulkanik_dalam": 0,
+            "vulkanik_dangkal": 0,
+            "low_frequency": 0,
+            "tremor_harmonik": 0,
+            "tremor_menerus": 0,
+            "tornillo": 0,
+            "hembusan": 0,
+            "tektonik_lokal": 0,
+            "tektonik_jauh": 0,
         }
     })
 
-# load lama
-old = []
-if os.path.exists(history_path):
-    old = json.load(open(history_path))
+os.makedirs("data", exist_ok=True)
 
-# merge
-merged = new_data + old
+with open("data/history.json", "w", encoding="utf-8") as f:
+    json.dump(history, f, indent=2)
 
-# unique by date+time
-unique = {}
-for d in merged:
-    key = d["date"] + d["time"]
-    unique[key] = d
-
-final = list(unique.values())
-
-# sort newest first
-final.sort(key=lambda x: (x["date"], x["time"]), reverse=True)
-
-json.dump(final, open(history_path, "w"), indent=2)
-
-print("SCRAPE DONE")
+print("DONE:", len(history))

@@ -1,59 +1,389 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitor Gunung Iya</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="style.css">
+<title>Monitoring Gunung Iya</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root{
+  --bg:#070b11;
+  --card:#111827;
+  --card2:#1a2332;
+  --border:#253044;
+  --text:#f1f5f9;
+  --muted:#94a3b8;
+  --danger:#ff5a5a;
+  --warning:#ffb020;
+  --success:#4ade80;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:
+    radial-gradient(circle at top,#182235 0%,#070b11 60%);
+  color:var(--text);
+  min-height:100vh;
+  padding:30px 18px;
+}
+
+/* HEADER */
+
+header{
+  max-width:1200px;
+  margin:auto;
+  margin-bottom:25px;
+}
+
+header h1{
+  font-size:2.3rem;
+  font-weight:700;
+  margin-bottom:8px;
+  letter-spacing:1px;
+}
+
+header p{
+  color:var(--muted);
+  font-size:0.95rem;
+}
+
+/* LAYOUT */
+
+.container{
+  max-width:1200px;
+  margin:auto;
+
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+}
+
+/* CARD */
+
+.card{
+  background:rgba(17,24,39,0.88);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:22px;
+
+  backdrop-filter:blur(10px);
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35);
+
+  transition:.25s ease;
+}
+
+.card:hover{
+  transform:translateY(-3px);
+  border-color:#3b4d6b;
+}
+
+.card h2{
+  margin-bottom:18px;
+  font-size:1.15rem;
+  font-weight:600;
+}
+
+/* META */
+
+.meta-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+}
+
+.meta-item{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:14px;
+  padding:16px;
+}
+
+.meta-label{
+  color:var(--muted);
+  font-size:.82rem;
+  margin-bottom:6px;
+}
+
+.meta-value{
+  font-size:1rem;
+  font-weight:600;
+}
+
+/* WARNING */
+
+.warning{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,90,90,0.15),
+      rgba(127,29,29,0.35)
+    );
+
+  border:1px solid rgba(255,90,90,0.3);
+
+  color:#ffdada;
+
+  padding:20px;
+  border-radius:18px;
+
+  font-weight:600;
+  line-height:1.6;
+}
+
+/* SUMMARY */
+
+.summary{
+  white-space:pre-wrap;
+  line-height:1.8;
+  color:#dbe5f1;
+  font-size:.96rem;
+}
+
+/* TABLE */
+
+.table-wrap{
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:500px;
+}
+
+th{
+  background:var(--card2);
+  color:#fff;
+  text-align:left;
+  padding:14px;
+  font-size:.9rem;
+}
+
+td{
+  padding:13px 14px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+
+tr:hover td{
+  background:rgba(255,255,255,0.03);
+}
+
+/* COMPARE */
+
+.compare-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+
+.compare-item{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;
+  padding:14px;
+}
+
+.compare-name{
+  color:var(--muted);
+  margin-bottom:6px;
+  font-size:.9rem;
+}
+
+.compare-value{
+  font-size:1.2rem;
+  font-weight:700;
+}
+
+.danger{
+  color:var(--danger);
+}
+
+.safe{
+  color:var(--success);
+}
+
+/* RESPONSIVE */
+
+@media(max-width:700px){
+
+  body{
+    padding:18px;
+  }
+
+  header h1{
+    font-size:1.7rem;
+  }
+
+  .card{
+    padding:18px;
+  }
+}
+</style>
 </head>
+
 <body>
 
 <header>
-  <h1>🌋 MONITOR GUNUNG IYA</h1>
-  <p>Analisis aktivitas vulkanik berbasis AI</p>
+  <h1>🌋 Monitoring Gunung Iya</h1>
+  <p>Sistem analisis aktivitas vulkanik berbasis data seismik</p>
 </header>
 
-<main>
+<div class="container">
 
-  <section class="card">
-    <h2>Status Gunung</h2>
-    <div id="status">Loading...</div>
-  </section>
+  <!-- META -->
+  <div class="card">
+    <h2>Informasi Terbaru</h2>
 
-  <section class="card">
-    <h2>Analisis AI</h2>
-    <div id="analysis">Loading...</div>
-  </section>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="meta-label">Tanggal</div>
+        <div class="meta-value" id="meta-date">-</div>
+      </div>
 
-  <section class="card">
-    <h2>Risk Score</h2>
-    <div id="risk-score">0</div>
-  </section>
+      <div class="meta-item">
+        <div class="meta-label">Jam</div>
+        <div class="meta-value" id="meta-time">-</div>
+      </div>
 
-  <section class="card">
-    <h2>Grafik Aktivitas</h2>
-    <canvas id="activityChart"></canvas>
-  </section>
+      <div class="meta-item">
+        <div class="meta-label">Status Gunung</div>
+        <div class="meta-value" id="meta-status">-</div>
+      </div>
+    </div>
+  </div>
 
-  <section class="card">
-    <h2>Laporan Terbaru</h2>
-    <ul id="history-list"></ul>
-  </section>
+  <!-- WARNING -->
+  <div class="warning" id="warning">
+    Memuat analisis...
+  </div>
 
-  <section class="card disclaimer">
-    <h2>Disclaimer</h2>
-    <p>
-      Analisis AI hanya sebagai informasi tambahan dan bukan pengganti
-      informasi resmi dari MAGMA Indonesia / PVMBG.
-    </p>
-  </section>
+  <!-- SUMMARY -->
+  <div class="card">
+    <h2>Analisis Aktivitas</h2>
+    <div class="summary" id="summary"></div>
+  </div>
 
-</main>
+  <!-- TABLE -->
+  <div class="card">
+    <h2>Detail Gempa Hari Ini</h2>
 
-<script src="app.js"></script>
+    <div class="table-wrap">
+      <table id="gempa"></table>
+    </div>
+  </div>
+
+  <!-- COMPARE -->
+  <div class="card">
+    <h2>Perbandingan Hari Sebelumnya</h2>
+
+    <div class="compare-grid" id="compare"></div>
+  </div>
+
+</div>
+
+<script>
+async function load() {
+
+  const history = await fetch("data/history.json")
+    .then(r => r.json());
+
+  const analysis = await fetch("data/analysis.json")
+    .then(r => r.json());
+
+  const latest = history[0];
+  const prev = history[1];
+
+  // META
+  document.getElementById("meta-date").innerText =
+    latest.date;
+
+  document.getElementById("meta-time").innerText =
+    latest.time;
+
+  document.getElementById("meta-status").innerText =
+    latest.status;
+
+  // WARNING
+  document.getElementById("warning").innerText =
+    analysis.warning;
+
+  // SUMMARY
+  document.getElementById("summary").innerText =
+    analysis.summary;
+
+  // GEMPA
+  let g = latest.gempa;
+
+  document.getElementById("gempa").innerHTML = `
+    <tr>
+      <th>Jenis Gempa</th>
+      <th>Jumlah</th>
+    </tr>
+
+    <tr><td>Vulkanik Dalam</td><td>${g.vulkanik_dalam}</td></tr>
+    <tr><td>Vulkanik Dangkal</td><td>${g.vulkanik_dangkal}</td></tr>
+    <tr><td>Low Frequency</td><td>${g.low_frequency}</td></tr>
+    <tr><td>Tremor Harmonik</td><td>${g.tremor_harmonik}</td></tr>
+    <tr><td>Tremor Menerus</td><td>${g.tremor_menerus}</td></tr>
+    <tr><td>Tornillo</td><td>${g.tornillo}</td></tr>
+    <tr><td>Hembusan</td><td>${g.hembusan}</td></tr>
+    <tr><td>Tektonik Lokal</td><td>${g.tektonik_lokal}</td></tr>
+    <tr><td>Tektonik Jauh</td><td>${g.tektonik_jauh}</td></tr>
+  `;
+
+  // COMPARISON
+  if(prev){
+
+    let c = latest.gempa;
+    let p = prev.gempa;
+
+    let html = "";
+
+    for(let k in c){
+
+      let diff = c[k] - p[k];
+
+      let cls = diff > 0
+        ? "danger"
+        : "safe";
+
+      html += `
+        <div class="compare-item">
+
+          <div class="compare-name">
+            ${k.replaceAll("_"," ")}
+          </div>
+
+          <div class="compare-value ${cls}">
+            ${diff >= 0 ? "+" : ""}
+            ${diff}
+          </div>
+
+        </div>
+      `;
+    }
+
+    document.getElementById("compare").innerHTML =
+      html;
+  }
+}
+
+load();
+</script>
 
 </body>
 </html>

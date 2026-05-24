@@ -1,6 +1,5 @@
 {
   "date": "2026-05-24",
-  "status": "LEVEL II (WASPADA)",
-  "gempa": 21,
-  "asap": "150 meter"
+  "status": "LEVEL II",
+  "gempa": 21
 }

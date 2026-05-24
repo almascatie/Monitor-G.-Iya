@@ -13,26 +13,17 @@ params = {
     "end": end.strftime("%Y-%m-%d")
 }
 
-response = requests.get(URL, params=params)
+res = requests.get(URL, params=params)
 
-raw = response.json()
+data = res.json()
 
 history = []
 
-for item in raw.get("data", []):
-
-    laporan = item.get("laporan", "")
-
-    gempa = laporan.lower().count("gempa")
-
-    status = item.get("status", "UNKNOWN")
-
-    date = item.get("date", "")
-
+for item in data.get("data", []):
     history.append({
-        "date": date,
-        "status": status,
-        "gempa": gempa
+        "date": item.get("tanggal") or item.get("date"),
+        "status": item.get("status", "UNKNOWN"),
+        "gempa": str(item).lower().count("gempa")
     })
 
 latest = history[0] if history else {}
@@ -43,4 +34,4 @@ with open("../data/history.json", "w", encoding="utf-8") as f:
 with open("../data/latest.json", "w", encoding="utf-8") as f:
     json.dump(latest, f, indent=2, ensure_ascii=False)
 
-print("Data berhasil diperbarui")
+print("Scraping selesai")

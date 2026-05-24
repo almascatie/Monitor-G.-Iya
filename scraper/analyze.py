@@ -1,12 +1,30 @@
 import json
 
+# =========================================
+# LOAD
+# =========================================
+
 with open('../data/history.json', 'r', encoding='utf-8') as f:
     history = json.load(f)
+
+# =========================================
+# VALIDATION
+# =========================================
+
+if not isinstance(history, list):
+
+    history = [history]
+
+# =========================================
+# NOT ENOUGH DATA
+# =========================================
 
 if len(history) < 2:
 
     result = {
-        "summary": "Data belum cukup untuk analisis tren aktivitas."
+        "summary": "Data belum cukup untuk analisis tren aktivitas.",
+        "warning": "Belum tersedia data pembanding.",
+        "risk_score": 0
     }
 
 else:
@@ -19,6 +37,8 @@ else:
 
     analysis = []
 
+    risk_score = 0
+
     # =====================================
     # Vulkanik Dangkal
     # =====================================
@@ -27,9 +47,10 @@ else:
 
         analysis.append(
             "Terjadi peningkatan gempa vulkanik dangkal dibanding hari sebelumnya. "
-            "Pola ini dapat mengindikasikan adanya pergerakan magma yang mulai "
-            "mendekati permukaan."
+            "Pola ini dapat mengindikasikan adanya pergerakan magma menuju permukaan."
         )
+
+        risk_score += 20
 
     # =====================================
     # Vulkanik Dalam
@@ -38,9 +59,11 @@ else:
     if latest_g["vulkanik_dalam"] > prev_g["vulkanik_dalam"]:
 
         analysis.append(
-            "Gempa vulkanik dalam mengalami peningkatan. "
-            "Hal ini dapat berkaitan dengan suplai magma dari kedalaman."
+            "Gempa vulkanik dalam mengalami peningkatan yang dapat berkaitan "
+            "dengan suplai magma dari kedalaman."
         )
+
+        risk_score += 15
 
     # =====================================
     # Tremor Harmonik
@@ -50,8 +73,10 @@ else:
 
         analysis.append(
             "Kemunculan tremor harmonik menunjukkan adanya aktivitas fluida "
-            "atau gas vulkanik yang bergerak secara kontinu."
+            "atau gas vulkanik yang bergerak kontinu."
         )
+
+        risk_score += 15
 
     # =====================================
     # Tremor Menerus
@@ -60,9 +85,11 @@ else:
     if latest_g["tremor_menerus"] > 0:
 
         analysis.append(
-            "Terdeteksi tremor terus menerus yang dapat mengindikasikan "
+            "Terdeteksi tremor menerus yang dapat mengindikasikan "
             "aktivitas internal gunung api masih berlangsung."
         )
+
+        risk_score += 20
 
     # =====================================
     # Low Frequency
@@ -71,9 +98,11 @@ else:
     if latest_g["low_frequency"] > prev_g["low_frequency"]:
 
         analysis.append(
-            "Gempa low frequency mengalami peningkatan dibanding periode sebelumnya. "
-            "Jenis gempa ini sering dikaitkan dengan pergerakan fluida vulkanik."
+            "Gempa low frequency mengalami peningkatan dan sering "
+            "dikaitkan dengan pergerakan fluida vulkanik."
         )
+
+        risk_score += 10
 
     # =====================================
     # Tornillo
@@ -86,20 +115,51 @@ else:
             "atau resonansi fluida di dalam sistem vulkanik."
         )
 
+        risk_score += 20
+
     # =====================================
-    # Fallback
+    # FALLBACK
     # =====================================
 
     if len(analysis) == 0:
 
         analysis.append(
-            "Belum terlihat perubahan signifikan pada pola kegempaan vulkanik "
+            "Belum terlihat perubahan signifikan pada pola kegempaan "
             "dibanding periode sebelumnya."
         )
 
+    # =====================================
+    # WARNING LEVEL
+    # =====================================
+
+    if risk_score >= 70:
+
+        warning = "Aktivitas vulkanik tinggi. Pemantauan intensif diperlukan."
+
+    elif risk_score >= 40:
+
+        warning = "Terjadi peningkatan aktivitas vulkanik."
+
+    else:
+
+        warning = "Aktivitas vulkanik relatif stabil."
+
+    # =====================================
+    # RESULT
+    # =====================================
+
     result = {
+
         "date": latest["date"],
+
+        "time": latest.get("time", ""),
+
         "status": latest["status"],
+
+        "risk_score": risk_score,
+
+        "warning": warning,
+
         "summary": "\n\n".join(analysis)
     }
 

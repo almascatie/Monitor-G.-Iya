@@ -1,9 +1,21 @@
 import requests
 import json
+import os
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
+# =====================================
+# CONFIG
+# =====================================
+
 URL = "https://magma.esdm.go.id/v1/gunung-api/laporan/search/q"
+
+history_path = "../data/history.json"
+latest_path = "../data/latest.json"
+
+# =====================================
+# DATE RANGE
+# =====================================
 
 end = datetime.now()
 start = end - timedelta(days=7)
@@ -14,63 +26,202 @@ params = {
     "end": end.strftime("%Y-%m-%d")
 }
 
+# =====================================
+# HEADERS
+# =====================================
+
 headers = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "*/*",
+    "Referer": "https://magma.esdm.go.id"
 }
 
-res = requests.get(URL, params=params, headers=headers, timeout=30)
+# =====================================
+# REQUEST
+# =====================================
 
-print("STATUS:", res.status_code)
+print("REQUESTING DATA...")
 
-html = res.text
+try:
 
-# simpan debug
+    res = requests.get(
+        URL,
+        params=params,
+        headers=headers,
+        timeout=30
+    )
+
+    print("STATUS:", res.status_code)
+
+except Exception as e:
+
+    print("REQUEST ERROR:", e)
+    exit()
+
+# =====================================
+# SAVE DEBUG RESPONSE
+# =====================================
+
 with open("../data/debug.html", "w", encoding="utf-8") as f:
-    f.write(html)
+    f.write(res.text)
 
-soup = BeautifulSoup(html, "html.parser")
+# =====================================
+# PARSE RESPONSE
+# =====================================
 
-history = []
+history_new = []
 
-# ambil semua text
-text = soup.get_text("\n")
+# coba parse JSON dulu
+try:
 
-# parsing sederhana
-lines = text.splitlines()
+    data = res.json()
 
-for line in lines:
+    print("JSON DETECTED")
 
-    line = line.strip()
+    items = []
 
-    if len(line) < 10:
-        continue
+    if isinstance(data, dict):
+        items = data.get("data", [])
 
-    # cari kata penting
-    if "Level" in line or "WASPADA" in line:
+    elif isinstance(data, list):
+        items = data
 
-        history.append({
-            "date": str(end.date()),
-            "status": line,
-            "gempa": line.lower().count("gempa"),
-            "raw": line
+    for item in items:
+
+        text = str(item)
+
+        history_new.append({
+            "date": item.get("tanggal")
+                    or item.get("date")
+                    or str(end.date()),
+
+            "status": item.get("status")
+                      or "UNKNOWN",
+
+            "gempa": text.lower().count("gempa"),
+
+            "raw": text[:500]
         })
 
-# fallback kalau kosong
-if len(history) == 0:
+except Exception:
 
-    history.append({
+    print("NOT JSON, TRY HTML PARSE")
+
+    soup = BeautifulSoup(res.text, "html.parser")
+
+    text = soup.get_text("\n")
+
+    lines = text.splitlines()
+
+    for line in lines:
+
+        line = line.strip()
+
+        if len(line) < 15:
+            continue
+
+        if (
+            "Level" in line
+            or "WASPADA" in line
+            or "SIAGA" in line
+            or "NORMAL" in line
+        ):
+
+            history_new.append({
+                "date": str(end.date()),
+                "status": line,
+                "gempa": line.lower().count("gempa"),
+                "raw": line
+            })
+
+# =====================================
+# FALLBACK
+# =====================================
+
+if len(history_new) == 0:
+
+    print("NO DATA FOUND")
+
+    history_new.append({
         "date": str(end.date()),
         "status": "DATA TIDAK TERBACA",
         "gempa": 0,
-        "raw": text[:500]
+        "raw": res.text[:500]
     })
 
-latest = history[0]
+# =====================================
+# LOAD OLD HISTORY
+# =====================================
 
-with open("../data/history.json", "w", encoding="utf-8") as f:
-    json.dump(history, f, indent=2, ensure_ascii=False)
+old_history = []
 
-with open("../data/latest.json", "w", encoding="utf-8") as f:
-    json.dump(latest, f, indent=2, ensure_ascii=False)
+if os.path.exists(history_path):
+
+    try:
+
+        with open(history_path, "r", encoding="utf-8") as f:
+            old_history = json.load(f)
+
+    except Exception as e:
+
+        print("ERROR LOAD OLD HISTORY:", e)
+        old_history = []
+
+# =====================================
+# COMBINE DATA
+# =====================================
+
+combined = history_new + old_history
+
+# remove duplicate berdasarkan tanggal
+unique = {}
+
+for item in combined:
+
+    date_key = item.get("date", "")
+
+    unique[date_key] = item
+
+# final list
+final_history = list(unique.values())
+
+# urut terbaru
+final_history.sort(
+    key=lambda x: x.get("date", ""),
+    reverse=True
+)
+
+# =====================================
+# SAVE HISTORY
+# =====================================
+
+with open(history_path, "w", encoding="utf-8") as f:
+
+    json.dump(
+        final_history,
+        f,
+        indent=2,
+        ensure_ascii=False
+    )
+
+# =====================================
+# SAVE LATEST
+# =====================================
+
+latest = final_history[0]
+
+with open(latest_path, "w", encoding="utf-8") as f:
+
+    json.dump(
+        latest,
+        f,
+        indent=2,
+        ensure_ascii=False
+    )
+
+# =====================================
+# DONE
+# =====================================
 
 print("SCRAPING DONE")
+print("TOTAL DATA:", len(final_history))

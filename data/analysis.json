@@ -1,5 +1,8 @@
 {
-  "risk_score": 93,
-  "risk_level": "tinggi",
-  "summary": "Aktivitas vulkanik relatif tinggi dan perlu pemantauan lebih lanjut."
+  "date": "2026-05-24",
+  "time": "10:02",
+  "status": "LEVEL II",
+  "risk_score": 0,
+  "warning": "Aktivitas vulkanik relatif stabil.",
+  "summary": "Belum terlihat perubahan signifikan pada pola kegempaan dibanding periode sebelumnya."
 }

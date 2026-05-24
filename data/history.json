@@ -1,31 +1,17 @@
-import os
-
-history_path = "../data/history.json"
-
-# load history lama
-old_history = []
-
-if os.path.exists(history_path):
-    with open(history_path, "r", encoding="utf-8") as f:
-        try:
-            old_history = json.load(f)
-        except:
-            old_history = []
-
-# gabungkan data baru + lama
-combined = history + old_history
-
-# hapus duplicate berdasarkan tanggal
-unique = {}
-
-for item in combined:
-    unique[item["date"]] = item
-
-final_history = list(unique.values())
-
-# urut terbaru
-final_history.sort(key=lambda x: x["date"], reverse=True)
-
-# simpan
-with open(history_path, "w", encoding="utf-8") as f:
-    json.dump(final_history, f, indent=2, ensure_ascii=False)
+[
+  {
+    "date": "2026-05-24",
+    "status": "LEVEL II",
+    "gempa": 21
+  },
+  {
+    "date": "2026-05-23",
+    "status": "LEVEL II",
+    "gempa": 18
+  },
+  {
+    "date": "2026-05-22",
+    "status": "LEVEL II",
+    "gempa": 17
+  }
+]

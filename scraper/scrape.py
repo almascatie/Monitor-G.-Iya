@@ -1,69 +1,166 @@
 import requests
 import json
 import os
+import re
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 URL = "https://magma.esdm.go.id/v1/gunung-api/laporan/search/q"
 
-headers = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept": "application/json, text/html"
-}
+history_path = "../data/history.json"
 
-now = datetime.now()
-start = now - timedelta(days=7)
+end = datetime.now()
+start = end - timedelta(days=7)
 
 params = {
     "code": "IYA",
     "start": start.strftime("%Y-%m-%d"),
-    "end": now.strftime("%Y-%m-%d")
+    "end": end.strftime("%Y-%m-%d")
 }
 
-res = requests.get(URL, params=params, headers=headers)
+headers = {
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://magma.esdm.go.id"
+}
+
+res = requests.get(
+    URL,
+    params=params,
+    headers=headers,
+    timeout=30
+)
 
 print("STATUS:", res.status_code)
-print("CONTENT-TYPE:", res.headers.get("content-type"))
+
+text = res.text
+
+with open("../data/debug.html", "w", encoding="utf-8") as f:
+    f.write(text)
+
+# =========================================
+# PARSE
+# =========================================
+
+def extract_number(pattern, text):
+
+    match = re.search(pattern, text, re.IGNORECASE)
+
+    if match:
+        try:
+            return int(match.group(1))
+        except:
+            return 0
+
+    return 0
+
+history_new = []
 
 try:
+
     data = res.json()
-except:
-    print("JSON FAIL → fallback HTML")
-    data = []
 
-# debug simpan response mentah
-os.makedirs("data", exist_ok=True)
-with open("data/debug_response.txt", "w", encoding="utf-8") as f:
-    f.write(res.text)
+    if isinstance(data, dict):
+        items = data.get("data", [])
+    else:
+        items = data
 
-history = []
+    for item in items:
 
-if isinstance(data, dict):
-    items = data.get("data", [])
-else:
-    items = data
+        raw = str(item)
 
-for item in items:
+        laporan = raw.lower()
 
-    history.append({
-        "date": item.get("tanggal", ""),
-        "time": item.get("jam", ""),
-        "status": item.get("status", "UNKNOWN"),
-        "gempa": {
-            "vulkanik_dalam": 0,
-            "vulkanik_dangkal": 0,
-            "low_frequency": 0,
-            "tremor_harmonik": 0,
-            "tremor_menerus": 0,
-            "tornillo": 0,
-            "hembusan": 0,
-            "tektonik_lokal": 0,
-            "tektonik_jauh": 0,
+        parsed = {
+            "date": item.get("tanggal", ""),
+            "status": item.get("status", "UNKNOWN"),
+
+            "gempa": {
+                "vulkanik_dalam":
+                    extract_number(r'vulkanik dalam[^0-9]*(\d+)', laporan),
+
+                "vulkanik_dangkal":
+                    extract_number(r'vulkanik dangkal[^0-9]*(\d+)', laporan),
+
+                "low_frequency":
+                    extract_number(r'low freq[^0-9]*(\d+)', laporan),
+
+                "tornillo":
+                    extract_number(r'tornillo[^0-9]*(\d+)', laporan),
+
+                "hembusan":
+                    extract_number(r'hembusan[^0-9]*(\d+)', laporan),
+
+                "tremor_harmonik":
+                    extract_number(r'tremor harmonik[^0-9]*(\d+)', laporan),
+
+                "tremor_non_harmonik":
+                    extract_number(r'tremor non harmonik[^0-9]*(\d+)', laporan),
+
+                "tremor_menerus":
+                    extract_number(r'tremor terus menerus[^0-9]*(\d+)', laporan),
+
+                "tektonik_lokal":
+                    extract_number(r'tektonik lokal[^0-9]*(\d+)', laporan),
+
+                "tektonik_jauh":
+                    extract_number(r'tektonik jauh[^0-9]*(\d+)', laporan),
+            },
+
+            "raw": raw[:1000]
         }
-    })
 
-os.makedirs("data", exist_ok=True)
+        history_new.append(parsed)
 
-with open("data/history.json", "w", encoding="utf-8") as f:
-    json.dump(history, f, indent=2)
+except Exception as e:
 
-print("DONE:", len(history))
+    print("PARSE ERROR:", e)
+
+# =========================================
+# LOAD OLD HISTORY
+# =========================================
+
+old_history = []
+
+if os.path.exists(history_path):
+
+    with open(history_path, "r", encoding="utf-8") as f:
+        try:
+            old_history = json.load(f)
+        except:
+            old_history = []
+
+# =========================================
+# COMBINE
+# =========================================
+
+combined = history_new + old_history
+
+unique = {}
+
+for item in combined:
+
+    date_key = item.get("date", "")
+
+    unique[date_key] = item
+
+final_history = list(unique.values())
+
+final_history.sort(
+    key=lambda x: x.get("date", ""),
+    reverse=True
+)
+
+# =========================================
+# SAVE
+# =========================================
+
+with open(history_path, "w", encoding="utf-8") as f:
+
+    json.dump(
+        final_history,
+        f,
+        indent=2,
+        ensure_ascii=False
+    )
+
+print("SCRAPING DONE")

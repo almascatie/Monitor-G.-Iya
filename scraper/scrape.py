@@ -1,21 +1,13 @@
 import requests
 import json
 import os
+import re
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-
-# =====================================
-# CONFIG
-# =====================================
 
 URL = "https://magma.esdm.go.id/v1/gunung-api/laporan/search/q"
 
 history_path = "../data/history.json"
-latest_path = "../data/latest.json"
-
-# =====================================
-# DATE RANGE
-# =====================================
 
 end = datetime.now()
 start = end - timedelta(days=7)
@@ -26,154 +18,123 @@ params = {
     "end": end.strftime("%Y-%m-%d")
 }
 
-# =====================================
-# HEADERS
-# =====================================
-
 headers = {
     "User-Agent": "Mozilla/5.0",
-    "Accept": "*/*",
     "Referer": "https://magma.esdm.go.id"
 }
 
-# =====================================
-# REQUEST
-# =====================================
+res = requests.get(
+    URL,
+    params=params,
+    headers=headers,
+    timeout=30
+)
 
-print("REQUESTING DATA...")
+print("STATUS:", res.status_code)
 
-try:
-
-    res = requests.get(
-        URL,
-        params=params,
-        headers=headers,
-        timeout=30
-    )
-
-    print("STATUS:", res.status_code)
-
-except Exception as e:
-
-    print("REQUEST ERROR:", e)
-    exit()
-
-# =====================================
-# SAVE DEBUG RESPONSE
-# =====================================
+text = res.text
 
 with open("../data/debug.html", "w", encoding="utf-8") as f:
-    f.write(res.text)
+    f.write(text)
 
-# =====================================
-# PARSE RESPONSE
-# =====================================
+# =========================================
+# PARSE
+# =========================================
+
+def extract_number(pattern, text):
+
+    match = re.search(pattern, text, re.IGNORECASE)
+
+    if match:
+        try:
+            return int(match.group(1))
+        except:
+            return 0
+
+    return 0
 
 history_new = []
 
-# coba parse JSON dulu
 try:
 
     data = res.json()
 
-    print("JSON DETECTED")
-
-    items = []
-
     if isinstance(data, dict):
         items = data.get("data", [])
-
-    elif isinstance(data, list):
+    else:
         items = data
 
     for item in items:
 
-        text = str(item)
+        raw = str(item)
 
-        history_new.append({
-            "date": item.get("tanggal")
-                    or item.get("date")
-                    or str(end.date()),
+        laporan = raw.lower()
 
-            "status": item.get("status")
-                      or "UNKNOWN",
+        parsed = {
+            "date": item.get("tanggal", ""),
+            "status": item.get("status", "UNKNOWN"),
 
-            "gempa": text.lower().count("gempa"),
+            "gempa": {
+                "vulkanik_dalam":
+                    extract_number(r'vulkanik dalam[^0-9]*(\d+)', laporan),
 
-            "raw": text[:500]
-        })
+                "vulkanik_dangkal":
+                    extract_number(r'vulkanik dangkal[^0-9]*(\d+)', laporan),
 
-except Exception:
+                "low_frequency":
+                    extract_number(r'low freq[^0-9]*(\d+)', laporan),
 
-    print("NOT JSON, TRY HTML PARSE")
+                "tornillo":
+                    extract_number(r'tornillo[^0-9]*(\d+)', laporan),
 
-    soup = BeautifulSoup(res.text, "html.parser")
+                "hembusan":
+                    extract_number(r'hembusan[^0-9]*(\d+)', laporan),
 
-    text = soup.get_text("\n")
+                "tremor_harmonik":
+                    extract_number(r'tremor harmonik[^0-9]*(\d+)', laporan),
 
-    lines = text.splitlines()
+                "tremor_non_harmonik":
+                    extract_number(r'tremor non harmonik[^0-9]*(\d+)', laporan),
 
-    for line in lines:
+                "tremor_menerus":
+                    extract_number(r'tremor terus menerus[^0-9]*(\d+)', laporan),
 
-        line = line.strip()
+                "tektonik_lokal":
+                    extract_number(r'tektonik lokal[^0-9]*(\d+)', laporan),
 
-        if len(line) < 15:
-            continue
+                "tektonik_jauh":
+                    extract_number(r'tektonik jauh[^0-9]*(\d+)', laporan),
+            },
 
-        if (
-            "Level" in line
-            or "WASPADA" in line
-            or "SIAGA" in line
-            or "NORMAL" in line
-        ):
+            "raw": raw[:1000]
+        }
 
-            history_new.append({
-                "date": str(end.date()),
-                "status": line,
-                "gempa": line.lower().count("gempa"),
-                "raw": line
-            })
+        history_new.append(parsed)
 
-# =====================================
-# FALLBACK
-# =====================================
+except Exception as e:
 
-if len(history_new) == 0:
+    print("PARSE ERROR:", e)
 
-    print("NO DATA FOUND")
-
-    history_new.append({
-        "date": str(end.date()),
-        "status": "DATA TIDAK TERBACA",
-        "gempa": 0,
-        "raw": res.text[:500]
-    })
-
-# =====================================
+# =========================================
 # LOAD OLD HISTORY
-# =====================================
+# =========================================
 
 old_history = []
 
 if os.path.exists(history_path):
 
-    try:
-
-        with open(history_path, "r", encoding="utf-8") as f:
+    with open(history_path, "r", encoding="utf-8") as f:
+        try:
             old_history = json.load(f)
+        except:
+            old_history = []
 
-    except Exception as e:
-
-        print("ERROR LOAD OLD HISTORY:", e)
-        old_history = []
-
-# =====================================
-# COMBINE DATA
-# =====================================
+# =========================================
+# COMBINE
+# =========================================
 
 combined = history_new + old_history
 
-# remove duplicate berdasarkan tanggal
 unique = {}
 
 for item in combined:
@@ -182,18 +143,16 @@ for item in combined:
 
     unique[date_key] = item
 
-# final list
 final_history = list(unique.values())
 
-# urut terbaru
 final_history.sort(
     key=lambda x: x.get("date", ""),
     reverse=True
 )
 
-# =====================================
-# SAVE HISTORY
-# =====================================
+# =========================================
+# SAVE
+# =========================================
 
 with open(history_path, "w", encoding="utf-8") as f:
 
@@ -204,24 +163,4 @@ with open(history_path, "w", encoding="utf-8") as f:
         ensure_ascii=False
     )
 
-# =====================================
-# SAVE LATEST
-# =====================================
-
-latest = final_history[0]
-
-with open(latest_path, "w", encoding="utf-8") as f:
-
-    json.dump(
-        latest,
-        f,
-        indent=2,
-        ensure_ascii=False
-    )
-
-# =====================================
-# DONE
-# =====================================
-
 print("SCRAPING DONE")
-print("TOTAL DATA:", len(final_history))

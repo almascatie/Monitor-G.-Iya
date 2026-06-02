@@ -1,6 +1,24 @@
 [
   {
     "date": "2026-06-02",
+    "time": "20:39",
+    "status": "LEVEL II",
+    "gempa": {
+      "vulkanik_dalam": 0,
+      "vulkanik_dangkal": 0,
+      "low_frequency": 0,
+      "tornillo": 0,
+      "hembusan": 0,
+      "tremor_harmonik": 0,
+      "tremor_non_harmonik": 0,
+      "tremor_menerus": 0,
+      "tektonik_lokal": 0,
+      "tektonik_jauh": 0
+    },
+    "raw": "Request Rejected\nMohon Maaf\n\nSistem Kami mengindikasikan adanya aktivitas mencurigakan pada perangkat dan atau jaringan yang Anda gunakan\n\nPastikan perangkat Anda  menggunakan jaringan yang aman dan bersih, serta terpasang antivirus.\nYour support ID is: 4939591424217752585\n1. Cek IP Address (https://ifconfig.me) \n2. Pastikan IP Address tidak termasuk dalam daftar hitam (https://mxtoolbox.com/blacklists.aspx) \nApabila error ini muncul akibat percobaan serangan yang Anda lakukan terhadap situs, maka kami akan proses sesuai ketentuan.\n[Go Back]"
+  },
+  {
+    "date": "2026-06-02",
     "time": "16:10",
     "status": "LEVEL II",
     "gempa": {

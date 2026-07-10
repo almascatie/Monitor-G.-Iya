@@ -1,6 +1,24 @@
 [
   {
     "date": "2026-07-10",
+    "time": "14:08",
+    "status": "LEVEL II",
+    "gempa": {
+      "vulkanik_dalam": 0,
+      "vulkanik_dangkal": 0,
+      "low_frequency": 0,
+      "tornillo": 0,
+      "hembusan": 0,
+      "tremor_harmonik": 0,
+      "tremor_non_harmonik": 0,
+      "tremor_menerus": 0,
+      "tektonik_lokal": 0,
+      "tektonik_jauh": 0
+    },
+    "raw": "\n\n\n\n\n\n\n\n\n\n\n\n\n\nHalaman Tidak Ditemukan\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                    4\n                \n\n\n\n\n\n\n\n                    0\n                \n\n\n\n\n\n\n\n                    4\n                \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nHalaman Tidak Ditemukan\n\n\n\n\n\n            Halaman yang Anda cari tidak ditemukan.\n        \n\n\n\n            Tinjau kembali URL yang Anda tuju, dan klik tombol refresh pada browser Anda.\n        \n\n\n\n\nKembali ke Halaman Awal\n\n\n\n\n\n\n\n\n\n\n\n\nBadan Geologi, PVMBG\n - MAGMA Indonesia\n        \n 2015 © Kementerian Energi dan Sumber Daya Mineral\n    \n\n\n\n"
+  },
+  {
+    "date": "2026-07-10",
     "time": "09:24",
     "status": "LEVEL II",
     "gempa": {
